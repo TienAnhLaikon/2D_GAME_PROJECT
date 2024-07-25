@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>frames</key>
+        <dict>
+            <key>paradiso_death_E.png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{300,300}</string>
+                <key>spriteSourceSize</key>
+                <string>{300,300}</string>
+                <key>textureRect</key>
+                <string>{{0,0},{300,300}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+        </dict>
+        <key>metadata</key>
+        <dict>
+            <key>format</key>
+            <integer>3</integer>
+            <key>pixelFormat</key>
+            <string>RGBA8888</string>
+            <key>premultiplyAlpha</key>
+            <false/>
+            <key>realTextureFileName</key>
+            <string>paradiso_death_E.png</string>
+            <key>size</key>
+            <string>{300,300}</string>
+            <key>smartupdate</key>
+            <string>$TexturePacker:SmartUpdate:a8bc89af654a56953145f3f57e98c6ca:0cb3345d8ff6e91732398383280fb81d:bfd251af76e5d996c2178c9987cb723c$</string>
+            <key>textureFileName</key>
+            <string>paradiso_death_E.png</string>
+        </dict>
+    </dict>
+</plist>

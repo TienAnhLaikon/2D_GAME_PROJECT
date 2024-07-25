@@ -1,0 +1,807 @@
+#include "UpgradeInventory.h"
+#include "../Player/Player.h"
+#include <unordered_set>
+#include "./UserInterface/InGame/EquipmentDetails.h"
+#include "./UserInterface/InGame/ItemDetails.h"
+UpgradeInventory* UpgradeInventory::createUpgradeInventory(Player* _player)
+{
+    auto inventory = new (std::nothrow) UpgradeInventory();
+    if (inventory && inventory->init(_player))
+    {
+        inventory->autorelease();
+        inventory->player = _player;
+        return inventory;
+    }
+    else
+    {
+        delete inventory;
+        return nullptr;
+    }
+}
+
+bool UpgradeInventory::compareUpgradeItem(const std::vector<std::tuple<std::string, int>>& tuples1, const std::vector<std::tuple<std::string, int>>& tuples2) {
+    int correctCount = 0;
+    for (const auto& tuple1 : tuples1) {
+        std::string str1 = std::get<0>(tuple1);
+        int int1 = std::get<1>(tuple1);
+        for (const auto& tuple2 : tuples2) {
+            std::string str2 = std::get<0>(tuple2);
+            if (str2 == str1) {
+                int int2 = std::get<1>(tuple2);
+                if (int1 >= int2) {
+                    for (auto materials : materialNodes)
+                    {
+                        if (materials->getBaseItem() && materials->getBaseItem()->getItemName() == str1) {
+                            materials->decreaseBaseItem(int2);
+                        }
+                    }
+                    correctCount++;
+                }
+            }
+        }
+    }
+    if (correctCount != static_cast<int>(tuples2.size())) return false;
+    else return true;
+}
+
+
+bool UpgradeInventory::init(Player* _player)
+{
+    if (!Node::init())
+    {
+        return false;
+    }
+
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    inventoryBorder = Node::create();
+    this->addChild(inventoryBorder);
+    auto layer = LayerColor::create(Color4B(0, 0, 0, 185));
+    layer->setContentSize(Director::getInstance()->getVisibleSize());
+    layer->setPosition(Vec2(-Director::getInstance()->getVisibleSize().width / 2, -Director::getInstance()->getVisibleSize().height / 2));
+
+    inventoryBorder->addChild(layer, 1);
+
+    auto touchListener2 = EventListenerTouchOneByOne::create();
+    touchListener2->setSwallowTouches(true);
+    touchListener2->onTouchBegan = [&](Touch* touch, Event* event) {
+        auto startPoint = this->convertToNodeSpace(touch->getLocation());
+        if (sortButton->getBoundingBox().containsPoint(startPoint))
+        {
+            UserDefault::getInstance()->setIntegerForKey("sound_effect", Audio::getInstance()->play2d("sound/sounds effect/click_button_sound.mp3", false, SettingsData::getInstance()->getSoundSlider() / 100.0f));
+            UpgradeInventory::sort();
+        }
+        if (prevInvenButton && prevInvenButton->getBoundingBox().containsPoint(startPoint))
+        {
+            UserDefault::getInstance()->setIntegerForKey("sound_effect", Audio::getInstance()->play2d("sound/sounds effect/click_button_sound.mp3", false, SettingsData::getInstance()->getSoundSlider() / 100.0f));
+            UpgradeInventory::prevInventoryPage();
+        }
+        else if (nextInvenButton && nextInvenButton->getBoundingBox().containsPoint(startPoint))
+        {
+            UserDefault::getInstance()->setIntegerForKey("sound_effect", Audio::getInstance()->play2d("sound/sounds effect/click_button_sound.mp3", false, SettingsData::getInstance()->getSoundSlider() / 100.0f));
+            UpgradeInventory::nextInventoryPage();
+        }
+        if (buttonClose->getBoundingBox().containsPoint(startPoint))
+        {
+            hideUpgradeInventory();
+        }
+
+        return false;
+        };
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener2, layer);
+
+    auto touchListener = EventListenerTouchOneByOne::create();
+    touchListener->setSwallowTouches(true);
+    touchListener->onTouchBegan = [&](Touch* touch, Event* event)
+        {
+            if (isVisible()) {
+                auto startPoint = this->convertToNodeSpace(touch->getLocation());
+                if (updateButton->getBoundingBox().containsPoint(startPoint) && weaponNode->getBaseEquipment() && weaponNode->getBaseEquipment()->getLevel() < 5) {
+                    UserDefault::getInstance()->setIntegerForKey("sound_effect", Audio::getInstance()->play2d("sound/sounds effect/click_button_sound.mp3", false, SettingsData::getInstance()->getSoundSlider() / 100.0f));
+                    auto materialsToUpgrade = weaponNode->getBaseEquipment()->materialsToUpgrade[weaponNode->getBaseEquipment()->getLevel() - 1];
+                    std::vector<std::tuple<std::string, int>> currentMaterialInNodes;
+                    for (auto materials : materialNodes)
+                    {
+                        if (materials->getBaseItem()) {
+                            currentMaterialInNodes.push_back(std::make_tuple(materials->getBaseItem()->getItemName(), materials->getQuantity()));
+                        }
+                    }
+                    if (compareUpgradeItem(currentMaterialInNodes, materialsToUpgrade.materialsItem) ) {
+                        weaponNode->getBaseEquipment()->levelUp();
+                        player->upgradeEquipment(weaponNode->getBaseEquipment()->getEquipmentName());
+                        auto mtrs = weaponNode->getBaseEquipment()->materialsToUpgrade[weaponNode->getBaseEquipment()->getLevel() - 1].materialsItem;
+                        int count = 0;
+                        for (auto mt : mtrs)
+                        {
+                            auto name = std::get<0>(mt);
+                            auto quan = std::get<1>(mt);
+                            materialNodes[count]->setMaterialsToUpgrade(name, quan);
+                            count++;
+                        }
+                        upgradeProgressBar->updateProgress((weaponNode->getBaseEquipment()->getLevel() - 1) * 20, 100);
+                        dmgStat->setString(" DMG: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getDamage())));
+                        mpStat->setString(" MP: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getMP())));
+                        hpStat->setString(" HP: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getHP())));
+                        msStat->setString(" Movement speed: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getMovementSpeed())));
+                        cdrStat->setString(" Skill duration: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getCDR())));
+                        armStat->setString(" Armor: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getArmor())));
+                        return true;
+                    }
+                    return false;
+                }
+                if (weaponNode->getBaseEquipment() && weaponNode->getBaseEquipment()->getLevel() >= 5) {
+                    upgradeProgressBar->updateProgress(0, 100);
+                    for (auto i : materialNodes) {
+                        if (i->getBaseItem()) {
+                            addItem(i->getBaseItem()->getItemName(), i->getQuantity());
+                            i->removeBaseItem();
+                        }
+                        i->removeMaterialCondition();
+                    }
+                }
+                if (isDraggingItem == false && isSo)
+                {
+                    for (auto& i : inventoryNodes)
+                    {
+                        if (i->getBoundingNode().containsPoint(startPoint))
+                        {
+                            if (i->getBaseEquipment())
+                            {
+                                equipment = EquipmentFactory::createEquipment(i->getBaseEquipment()->getEquipmentName(), i->getBaseEquipment()->getLevel());
+                                equipment->setScale(1.2 * Director::getInstance()->getContentScaleFactor());
+                                equipment->setPosition(startPoint + Vec2(-15.6 * Director::getInstance()->getContentScaleFactor(), 15.6 * Director::getInstance()->getContentScaleFactor()));
+                                inventoryBorder->addChild(equipment, 25);
+                                i->removeBaseEquipment();
+                                currentNode = i;
+                                isDraggingItem = true;
+                                UserDefault::getInstance()->setIntegerForKey("sound_effect", Audio::getInstance()->play2d("sound/sounds effect/click_button_sound.mp3", false, SettingsData::getInstance()->getSoundSlider() / 100.0f));
+                                return true;
+                            }
+                            else if (i->getBaseItem()) {
+                                item = ItemFactory::createItem(i->getBaseItem()->getItemName());
+                                item->setScale(5 * Director::getInstance()->getContentScaleFactor());
+                                item->setPosition(startPoint + Vec2(-15.6 * Director::getInstance()->getContentScaleFactor(), 15.6 * Director::getInstance()->getContentScaleFactor()));
+                                inventoryBorder->addChild(item, 25);
+                                movingItemQuantity = i->getQuantity();
+                                i->removeBaseItem();
+                                currentNode = i;
+                                isDraggingItem = true;
+                                UserDefault::getInstance()->setIntegerForKey("sound_effect", Audio::getInstance()->play2d("sound/sounds effect/click_button_sound.mp3", false, SettingsData::getInstance()->getSoundSlider() / 100.0f));
+                                return true;
+                            }
+                            return false;
+                        }
+                    }
+
+                    if (weaponNode->getBoundingNode().containsPoint(startPoint) && weaponNode->getStatus() == "busy") {
+                        equipment = EquipmentFactory::createEquipment(weaponNode->getBaseEquipment()->getEquipmentName(), weaponNode->getBaseEquipment()->getLevel());
+                        equipment->setScale(1.2 * Director::getInstance()->getContentScaleFactor());
+                        equipment->setPosition(startPoint + Vec2(-15.6 * Director::getInstance()->getContentScaleFactor(), 15.6 * Director::getInstance()->getContentScaleFactor()));
+                        inventoryBorder->addChild(equipment, 25);
+                        weaponNode->removeBaseEquipment();
+                        currentNode = weaponNode;
+                        isDraggingItem = true;
+                        upgradeProgressBar->updateProgress(0, 100);
+                        for (auto i : materialNodes) {
+                            if (i->getBaseItem()) {
+                                addItem(i->getBaseItem()->getItemName(), i->getQuantity());
+                                i->removeBaseItem();
+                            }
+                            i->removeMaterialCondition();
+                        }
+                        dmgStat->setString(" DMG  ");
+                        mpStat->setString(" MP  ");
+                        hpStat->setString(" HP  ");
+                        msStat->setString(" Movement speed  ");
+                        cdrStat->setString(" Skill duration  ");
+                        armStat->setString(" Armor  ");
+                        isInUpgrade = true;
+                    }
+                    else if (materialItem1->getBoundingNode().containsPoint(startPoint) && materialItem1->getStatus() == "busy") {
+                        item = ItemFactory::createItem(materialItem1->getBaseItem()->getItemName());
+                        item->setScale(5 * Director::getInstance()->getContentScaleFactor());
+                        item->setPosition(startPoint + Vec2(-15.6 * Director::getInstance()->getContentScaleFactor(), 15.6 * Director::getInstance()->getContentScaleFactor()));
+                        inventoryBorder->addChild(item, 25);
+                        movingItemQuantity = materialItem1->getQuantity();
+                        materialItem1->removeBaseItem();
+                        currentNode = materialItem1;
+                        isDraggingItem = true;
+                    }
+                    else if (materialItem2->getBoundingNode().containsPoint(startPoint) && materialItem2->getStatus() == "busy") {
+                        item = ItemFactory::createItem(materialItem2->getBaseItem()->getItemName());
+                        item->setScale(5 * Director::getInstance()->getContentScaleFactor());
+                        item->setPosition(startPoint + Vec2(-15.6 * Director::getInstance()->getContentScaleFactor(), 15.6 * Director::getInstance()->getContentScaleFactor()));
+                        inventoryBorder->addChild(item, 25);
+                        movingItemQuantity = materialItem2->getQuantity();
+                        materialItem2->removeBaseItem();
+                        currentNode = materialItem2;
+                        isDraggingItem = true;
+                    }
+                    else if (materialItem3->getBoundingNode().containsPoint(startPoint) && materialItem3->getStatus() == "busy") {
+                        item = ItemFactory::createItem(materialItem3->getBaseItem()->getItemName());
+                        item->setScale(5 * Director::getInstance()->getContentScaleFactor());
+                        item->setPosition(startPoint + Vec2(-15.6 * Director::getInstance()->getContentScaleFactor(), 15.6 * Director::getInstance()->getContentScaleFactor()));
+                        inventoryBorder->addChild(item, 25);
+                        movingItemQuantity = materialItem3->getQuantity();
+                        materialItem3->removeBaseItem();
+                        currentNode = materialItem3;
+                        isDraggingItem = true;
+                    }
+                    return true;
+                }
+            }
+            return false;
+        };
+    touchListener->onTouchMoved = [&](Touch* touch, Event* event)
+        {
+            if (isDraggingItem && isSo)
+            {
+                if(equipment)
+                    equipment->setPosition(this->convertToNodeSpace(touch->getLocation()) + Vec2(-15.6 * Director::getInstance()->getContentScaleFactor(), 15.6 * Director::getInstance()->getContentScaleFactor()));
+                else if(item)
+                    item->setPosition(this->convertToNodeSpace(touch->getLocation()) + Vec2(-15.6 * Director::getInstance()->getContentScaleFactor(), 15.6 * Director::getInstance()->getContentScaleFactor()));
+            }
+        };
+    touchListener->onTouchEnded = [&](Touch* touch, Event* event)
+        {
+            if (isDraggingItem && isSo)
+            {
+                auto endPoint = this->convertToNodeSpace(touch->getLocation());
+                if (equipment && currentNode->getBoundingNode().containsPoint(endPoint)) {
+                    showEquipmentDetails(equipment, isInUpgrade);
+                }
+                isInUpgrade = false;
+                if (item && currentNode->getBoundingNode().containsPoint(endPoint)) {
+                    bool isInMaterial = false;
+                    for (auto i : materialNodes) {
+                        if (i->getBoundingBox().containsPoint(item->getPosition())) {
+                            isInMaterial = true;
+                            break;
+                        }
+                    }
+                    showItemDetails(item, isInMaterial);
+                }
+                if (item && weaponNode->getBaseEquipment() && materialItem1->getBoundingNode().containsPoint(item->getPosition())) {
+                    if (materialItem1->getBaseItemToUpgrade() && item && materialItem1->getBaseItemToUpgrade()->getItemName() == item->getItemName()) {
+                        if (materialItem1->getStatus() == "busy") {
+                            currentNode->removeBaseItem();
+                            currentNode->setBaseItem(materialItem1->getBaseItem()->getItemName());
+                            currentNode->setQuantity(movingItemQuantity);
+                            materialItem1->removeBaseItem();
+                            materialItem1->setQuantity(0);
+                        }
+                        materialItem1->setBaseItem(item->getItemName());
+                        materialItem1->setQuantity(movingItemQuantity);
+                    }
+                    else {
+                        if (item) {
+                            this->addItem(item->getItemName(), movingItemQuantity);
+                        }
+                        else if(equipment) {
+                            this->addEquipment(equipment->getEquipmentName(), equipment->getLevel(), 1);
+                        }
+                    }
+                }
+                else if (item && weaponNode->getBaseEquipment() && materialItem2->getBoundingNode().containsPoint(item->getPosition())) {
+                    if (materialItem2->getBaseItemToUpgrade() && materialItem2->getBaseItemToUpgrade()->getItemName() == item->getItemName()) {
+                        if (materialItem2->getStatus() == "busy") {
+                            currentNode->removeBaseItem();
+                            currentNode->setBaseItem(materialItem2->getBaseItem()->getItemName());
+                            currentNode->setQuantity(movingItemQuantity);
+                            materialItem2->removeBaseItem();
+                            materialItem2->setQuantity(0);
+                        }
+                        materialItem2->setBaseItem(item->getItemName());
+                        materialItem2->setQuantity(movingItemQuantity);
+                    }
+                    else {
+                        if (item) {
+                            this->addItem(item->getItemName(), movingItemQuantity);
+                        }
+                        else if (equipment) {
+                            this->addEquipment(equipment->getEquipmentName(), equipment->getLevel(), 1);
+                        }
+                    }
+                }
+                else if (item && weaponNode->getBaseEquipment() && materialItem3->getBoundingNode().containsPoint(item->getPosition())) {
+                    if (materialItem3->getBaseItemToUpgrade() && materialItem3->getBaseItemToUpgrade()->getItemName() == item->getItemName()) {
+                        if (materialItem3->getStatus() == "busy") {
+                            currentNode->removeBaseItem();
+                            currentNode->setBaseItem(materialItem3->getBaseItem()->getItemName());
+                            currentNode->setQuantity(movingItemQuantity);
+                            materialItem3->removeBaseItem();
+                            materialItem3->setQuantity(0);
+                        }
+                        materialItem3->setBaseItem(item->getItemName());
+                        materialItem3->setQuantity(movingItemQuantity);
+                    }
+                    else {
+                        if (item) {
+                            this->addItem(item->getItemName(), movingItemQuantity);
+                        }
+                        else if (equipment) {
+                            this->addEquipment(equipment->getEquipmentName(), equipment->getLevel(), 1);
+                        }
+                    }
+                }
+                else if (equipment && weaponNode->getBoundingNode().containsPoint(equipment->getPosition())) {
+                    if (weaponNode->getStatus() == "busy") {
+                        currentNode->removeBaseEquipment();
+                        currentNode->setBaseEquipment(weaponNode->getBaseEquipment()->getEquipmentName(), weaponNode->getBaseEquipment()->getLevel());
+                        currentNode->setQuantity(1);
+                        weaponNode->removeBaseEquipment();
+                        weaponNode->setQuantity(0);
+                    }
+                    weaponNode->setBaseEquipment(equipment->getEquipmentName(), equipment->getLevel());
+                    weaponNode->setQuantity(1);
+                    
+                    auto mtrs = weaponNode->getBaseEquipment()->materialsToUpgrade[equipment->getLevel() - 1].materialsItem;
+                    int count = 0;
+                    for (auto mt : mtrs)
+                    {
+                        auto name = std::get<0>(mt);
+                        auto quan = std::get<1>(mt);
+                        materialNodes[count]->setMaterialsToUpgrade(name, quan);
+                        count++;
+                    }
+
+                    upgradeProgressBar->updateProgress((weaponNode->getBaseEquipment()->getLevel() - 1) * 20, 100);
+                    dmgStat->setString(" DMG: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getDamage())));
+                    mpStat->setString(" MP: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getMP())));
+                    hpStat->setString(" HP: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getHP())));
+                    msStat->setString(" Movement speed: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getMovementSpeed())));
+                    cdrStat->setString(" Skill duration: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getCDR())));
+                    armStat->setString(" Armor: " + std::to_string(static_cast<int>(weaponNode->getBaseEquipment()->getArmor())));
+                }
+                else {
+                    int count = 0;
+                    for (auto& i : inventoryNodes)
+                    {
+                        if (equipment && i->getBoundingNode().containsPoint(equipment->getPosition()) && i->getStatus() == "free")
+                        {
+                            i->setBaseEquipment(equipment->getEquipmentName(), equipment->getLevel());
+                            i->setQuantity(1);
+                            count++;
+                            break;
+                        }
+                        else if (item && i->getBoundingNode().containsPoint(item->getPosition()) && i->getStatus() == "free") {
+                            i->setBaseItem(item->getItemName());
+                            i->setQuantity(movingItemQuantity);
+                            count++;
+                        }
+                    }
+                    if (count == 0)
+                    {
+                        if (equipment && currentNode == weaponNode) {
+                            currentNode->setBaseEquipment(equipment->getEquipmentName(), equipment->getLevel());
+                            currentNode->setQuantity(1);
+                            count++;
+                        }
+                        else {
+                            if (equipment) {
+                                currentNode->setBaseEquipment(equipment->getEquipmentName(), equipment->getLevel());
+                                currentNode->setQuantity(1);
+                            }
+                            else if (item) {
+                                currentNode->setBaseItem(item->getItemName());
+                                currentNode->setQuantity(movingItemQuantity);
+                            }
+                            count++;
+                        }
+
+                    }
+                }
+                if (equipment) {
+                    equipment->removeFromParentAndCleanup(true);
+                    equipment = nullptr;
+                }
+                else if (item) {
+                    item->removeFromParentAndCleanup(true);
+                    item = nullptr;
+                }
+            }
+            isDraggingItem = false;
+
+        };
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, this);
+
+
+    mainUpgradeInventory = Sprite::create("res/inventory-border.png");
+
+
+    subUpgradeInventory = Sprite::create("res/inventory-border.png");
+    inventoryBorder->addChild(subUpgradeInventory, 10);
+
+    inventoryBorder->addChild(mainUpgradeInventory, 12);
+    float subInventoryScaleX = (visibleSize.width / 2 / (visibleSize.width / visibleSize.height)) / subUpgradeInventory->getContentSize().width;
+    float subInventoryScaleY = visibleSize.height / (visibleSize.width / visibleSize.height) / subUpgradeInventory->getContentSize().height;
+    subUpgradeInventory->setScale(subInventoryScaleX, subInventoryScaleY);
+    mainUpgradeInventory->setScale(subInventoryScaleX, subInventoryScaleY);
+
+    subUpgradeInventory->setPosition(Vec2(-mainUpgradeInventory->getContentSize().width * subInventoryScaleX / 2, 0));
+    mainUpgradeInventory->setPosition(Vec2(subUpgradeInventory->getContentSize().width * subInventoryScaleX / 2, 0));
+
+    buttonClose = Sprite::create("res/c_header_close.png");
+    buttonClose->setScale(0.6 * Director::getInstance()->getContentScaleFactor());
+    buttonClose->retain();
+    buttonClose->setPosition(Vec2(mainUpgradeInventory->getPositionX() + mainUpgradeInventory->getContentSize().width * subInventoryScaleX / 2 - buttonClose->getContentSize().width * 0.4, mainUpgradeInventory->getPositionY() + mainUpgradeInventory->getContentSize().height * subInventoryScaleY / 2 - buttonClose->getContentSize().height * 0.4));
+    inventoryBorder->addChild(buttonClose, 50);
+
+    sortButton = Sprite::create("res/sort_button.png");
+    sortButton->setScale(0.5 * Director::getInstance()->getContentScaleFactor());
+    sortButton->retain();
+    sortButton->setPosition(Vec2(mainUpgradeInventory->getPositionX() + mainUpgradeInventory->getContentSize().width * subInventoryScaleX / 2 - sortButton->getContentSize().width * (0.5 * Director::getInstance()->getContentScaleFactor()) * 0.5, 0));
+    inventoryBorder->addChild(sortButton, 50);
+
+    float squareSize = (subUpgradeInventory->getContentSize().width * subInventoryScaleX) / 6.5;
+    const float gapX = squareSize / 30;
+    const float gapY = squareSize / 30;
+
+    weaponNode = InventoryNode::createInventoryNode(squareSize);
+    weaponNode->getNodeSprite()->setTexture("res/upgrade_node.png");
+    weaponNode->setPosition(subUpgradeInventory->getPositionX(), subUpgradeInventory->getPositionY() - gapY * 10 + (squareSize + 2));
+    auto weaponIcon = Sprite::create("res/weapon-icon.png");
+    weaponIcon->setScale(0.2 * Director::getInstance()->getContentScaleFactor());
+    weaponIcon->setAnchorPoint(Vec2(-0.25, -0.25));
+    inventoryBorder->addChild(weaponIcon, 22);
+    inventoryBorder->addChild(weaponNode, 21);
+
+    materialItem1 = InventoryNode::createInventoryNode(squareSize);
+    materialItem1->setPosition(subUpgradeInventory->getPositionX() - (squareSize + 2), subUpgradeInventory->getPositionY() - gapY * 8);
+    materialNodes.push_back(materialItem1);
+    inventoryBorder->addChild(materialItem1, 23);
+
+    materialItem2 = InventoryNode::createInventoryNode(squareSize);
+    materialItem2->setPosition(Vec2(squareSize + 2, 0) + Vec2(subUpgradeInventory->getPositionX() - (squareSize + 2), subUpgradeInventory->getPositionY() - gapY * 8));
+    materialNodes.push_back(materialItem2);
+    inventoryBorder->addChild(materialItem2, 23);
+
+    materialItem3 = InventoryNode::createInventoryNode(squareSize);
+    materialItem3->setPosition(Vec2((squareSize + 2) * 2, 0) + Vec2(subUpgradeInventory->getPositionX() - (squareSize + 2), subUpgradeInventory->getPositionY() - gapY * 8));
+    materialNodes.push_back(materialItem3);
+    inventoryBorder->addChild(materialItem3, 23);
+
+    auto moneyToUpgrade = Label::createWithTTF("   + 0$", "fonts/Diablo Light.ttf", 12);
+    moneyToUpgrade->setAnchorPoint(Vec2(0,0));
+    moneyToUpgrade->setPosition(Vec2((squareSize + 2) * 3, moneyToUpgrade->getContentSize().height / 2) + Vec2(subUpgradeInventory->getPositionX() - (squareSize + 2), subUpgradeInventory->getPositionY() - gapY * 8));
+    inventoryBorder->addChild(moneyToUpgrade, 23);
+
+    updateButton = Label::createWithTTF("Upgrade", "fonts/Diablo Light.ttf", 13);
+    updateButton->setPosition(subUpgradeInventory->getPositionX() + updateButton->getContentSize().width / 4, subUpgradeInventory->getPositionY() - gapY * 32);
+    inventoryBorder->addChild(updateButton, 22);
+    auto updateButtonBorder = Sprite::create("res/button_gray-HOVER.png");
+    updateButtonBorder->setScale(0.25 * Director::getInstance()->getContentScaleFactor());
+    updateButtonBorder->setPosition(updateButton->getPosition());
+    inventoryBorder->addChild(updateButtonBorder, 21);
+
+    upgradeProgressBar = UpgradeProgressBar::create();
+    upgradeProgressBar->updateProgress(0, 100);
+    upgradeProgressBar->setPosition(subUpgradeInventory->getPositionX() + updateButton->getContentSize().width / 4, subUpgradeInventory->getPositionY() - gapY * 18);
+    inventoryBorder->addChild(upgradeProgressBar, 23);
+
+    auto equipmentStats = Node::create();
+    dmgStat = Label::createWithTTF(" DMG  ", "fonts/Diablo Light.ttf", 18);
+    dmgStat->setAnchorPoint(Vec2(0, 0));
+    dmgStat->setPosition(0, 0);
+    equipmentStats->addChild(dmgStat);
+    mpStat = Label::createWithTTF(" MP  ", "fonts/Diablo Light.ttf", 18);
+    mpStat->setAnchorPoint(Vec2(0, 0));
+    mpStat->setPosition(0, 30);
+    equipmentStats->addChild(mpStat);
+    hpStat = Label::createWithTTF(" HP  ", "fonts/Diablo Light.ttf", 18);
+    hpStat->setAnchorPoint(Vec2(0, 0));
+    hpStat->setPosition(0, 60);
+    equipmentStats->addChild(hpStat);
+    msStat = Label::createWithTTF(" Movement speed  ", "fonts/Diablo Light.ttf", 18);
+    msStat->setAnchorPoint(Vec2(0, 0));
+    msStat->setPosition((subUpgradeInventory->getContentSize().width * subInventoryScaleX) / 1.8, 0);
+    equipmentStats->addChild(msStat);
+    cdrStat = Label::createWithTTF(" Skill duration  ", "fonts/Diablo Light.ttf", 18);
+    cdrStat->setAnchorPoint(Vec2(0, 0));
+    cdrStat->setPosition((subUpgradeInventory->getContentSize().width * subInventoryScaleX) / 1.8, 30);
+    equipmentStats->addChild(cdrStat);
+    armStat = Label::createWithTTF(" Armor  ", "fonts/Diablo Light.ttf", 18);
+    armStat->setAnchorPoint(Vec2(0, 0));
+    armStat->setPosition((subUpgradeInventory->getContentSize().width * subInventoryScaleX) / 1.8, 60);
+
+    equipmentStats->addChild(armStat);
+    equipmentStats->setAnchorPoint(Vec2(0, 0));
+    equipmentStats->setScale(0.5);
+    equipmentStats->setPosition(subUpgradeInventory->getPositionX() - (subUpgradeInventory->getContentSize().width * subInventoryScaleX) / 2.2, subUpgradeInventory->getPositionY() - (subUpgradeInventory->getContentSize().height * subInventoryScaleY) / 2.2);
+    inventoryBorder->addChild(equipmentStats, 10);
+
+
+
+    pageLabel = Label::createWithTTF("1/3", "fonts/Diablo Light.ttf", 13);
+    pageLabel->setTextColor(Color4B::WHITE);
+    pageLabel->setPosition(mainUpgradeInventory->getPosition() - Vec2(0, mainUpgradeInventory->getContentSize().height * mainUpgradeInventory->getScaleY() * 0.5 - pageLabel->getContentSize().height * 0.6));
+    inventoryBorder->addChild(pageLabel, 50);
+
+    prevInvenButton = Sprite::create("res/left-arr-ui.png");
+    prevInvenButton->setPosition(pageLabel->getPosition() + Vec2(-(prevInvenButton->getContentSize().width * 5 + pageLabel->getContentSize().width / 2), 0));
+    inventoryBorder->addChild(prevInvenButton, 25);
+
+    nextInvenButton = Sprite::create("res/right-arr-ui.png");
+    nextInvenButton->setPosition(pageLabel->getPosition() + Vec2(nextInvenButton->getContentSize().width * 5 + pageLabel->getContentSize().width / 2, 0));
+    inventoryBorder->addChild(nextInvenButton, 25);
+
+    auto t = Vec2(subUpgradeInventory->getContentSize().width * subInventoryScaleX * 0.08, subUpgradeInventory->getContentSize().height * subInventoryScaleY * 0.26);
+    int count = 0;
+    while (count < totalInventoryPage) {
+        for (int row = 0; row < numRows; ++row)
+        {
+            for (int col = 0; col < numCols; ++col)
+            {
+                auto node = InventoryNode::createInventoryNode(squareSize);
+                node->setPosition(t + Vec2(col * (squareSize + gapX), -row * (squareSize + gapY)));
+                inventoryBorder->addChild(node, 20);
+                inventoryNodes.push_back(node);
+            }
+        }
+        count++;
+    }
+    UpgradeInventory::onPageChange();
+    hideUpgradeInventory();
+
+    return true;
+}
+
+
+void UpgradeInventory::nextInventoryPage() {
+    if (prevInvenButton->isVisible() == false) prevInvenButton->setVisible(true);
+    if (currentInventoryPage < totalInventoryPage - 1) {
+        currentInventoryPage++;
+        onPageChange();
+    }
+}
+
+void UpgradeInventory::prevInventoryPage() {
+    if (nextInvenButton->isVisible() == false) nextInvenButton->setVisible(true);
+
+    if (currentInventoryPage > 0) {
+        currentInventoryPage--;
+        onPageChange();
+    }
+}
+
+void UpgradeInventory::onPageChange() {
+    for (int i = 0; i < inventoryNodes.size(); i++) {
+        if (i >= (currentInventoryPage == 0 ? 0 : currentInventoryPage * (numRows * numCols)) && i < (currentInventoryPage + 1) * (numRows * numCols)) {
+            inventoryNodes[i]->setVisible(true);
+            inventoryNodes[i]->show();
+        }
+        else {
+            inventoryNodes[i]->setVisible(false);
+            inventoryNodes[i]->hide();
+        }
+    }
+    if (currentInventoryPage == 0) prevInvenButton->setVisible(false);
+    if (currentInventoryPage == (totalInventoryPage - 1)) nextInvenButton->setVisible(false);
+    pageLabel->setString(std::to_string(currentInventoryPage + 1) + "/" + std::to_string(totalInventoryPage));
+}
+
+void UpgradeInventory::sort() {
+    if (UpgradeInventory::isShow()) {
+        for (int i = 0; i < inventoryNodes.size(); i++) {
+            for (int j = i + 1; j < inventoryNodes.size(); j++) {
+                if (inventoryNodes[i]->getBaseItem() && inventoryNodes[j]->getBaseItem() && inventoryNodes[i]->getBaseItem()->getItemName() == inventoryNodes[j]->getBaseItem()->getItemName()) {
+                    inventoryNodes[i]->setQuantity(inventoryNodes[i]->getQuantity() + inventoryNodes[j]->getQuantity());
+                    inventoryNodes[j]->removeBaseItem();
+                }
+            }
+        }
+        for (int i = 0; i < inventoryNodes.size(); i++) {
+            for (int j = i + 1; j < inventoryNodes.size(); j++) {
+                if (inventoryNodes[i]->getStatus() == "free" && (inventoryNodes[j]->getBaseEquipment() || inventoryNodes[j]->getBaseItem())) {
+                    if (inventoryNodes[j]->getBaseEquipment()) {
+                        inventoryNodes[i]->setBaseEquipment(inventoryNodes[j]->getBaseEquipment()->getEquipmentName(), inventoryNodes[j]->getBaseEquipment()->getLevel());
+                        inventoryNodes[i]->setQuantity(inventoryNodes[j]->getQuantity());
+                        inventoryNodes[j]->removeBaseEquipment();
+                    }
+                    else if (inventoryNodes[j]->getBaseItem()) {
+                        inventoryNodes[i]->setBaseItem(inventoryNodes[j]->getBaseItem()->getItemName());
+                        inventoryNodes[i]->setQuantity(inventoryNodes[j]->getQuantity());
+                        inventoryNodes[j]->removeBaseItem();
+                    }
+                }
+            }
+        }
+    }
+}
+
+void UpgradeInventory::showEquipmentDetails(BaseEquipment* equipment, bool isInUpgrade) {
+    std::string path = equipment->getTexture()->getPath();
+    std::string name = equipment->getEquipmentName();
+
+    if (equipment->equipmentDetails == nullptr) {
+        std::string equipmentStats = "";
+        if (equipment->getDamage() > 0) {
+            if (equipmentStats != "") {
+                equipmentStats += "\n- dmg: " + std::to_string(equipment->getDamage());
+            }
+            else {
+                equipmentStats += "- dmg: " + std::to_string(equipment->getDamage());
+            }
+        }
+        if (equipment->getSkillDamage() > 0) {
+            if (equipmentStats != "") {
+                equipmentStats += "\n- skill dmg: " + std::to_string(equipment->getSkillDamage());
+            }
+            else {
+                equipmentStats += "- skill dmg: " + std::to_string(equipment->getSkillDamage());
+            }
+        }
+        if (equipment->getArmor() > 0) {
+            if (equipmentStats != "") {
+                equipmentStats += "\n- armor: " + std::to_string(equipment->getArmor());
+            }
+            else {
+                equipmentStats += "- armor: " + std::to_string(equipment->getArmor());
+            }
+        }
+        if (equipment->getMovementSpeed() > 0) {
+            if (equipmentStats != "") {
+                equipmentStats += "\n- movement speed: " + std::to_string(equipment->getMovementSpeed());
+            }
+            else {
+                equipmentStats += "- movement speed: " + std::to_string(equipment->getMovementSpeed());
+            }
+        }
+        if (equipment->getHP() > 0) {
+            if (equipmentStats != "") {
+                equipmentStats += "\n- HP: " + std::to_string(equipment->getHP());
+            }
+            else {
+                equipmentStats += "- HP: " + std::to_string(equipment->getHP());
+            }
+        }
+        if (equipment->getMP() > 0) {
+            if (equipmentStats != "") {
+                equipmentStats += "\n- MP: " + std::to_string(equipment->getMP());
+            }
+            else {
+                equipmentStats += "- MP: " + std::to_string(equipment->getMP());
+            }
+        }
+        if (equipment->getCDR() > 0) {
+            if (equipmentStats != "") {
+                equipmentStats += "\n- skill cooldown: " + std::to_string(equipment->getCDR());
+            }
+            else {
+                equipmentStats += "- skill cooldown: " + std::to_string(equipment->getCDR());
+            }
+        }
+        equipment->equipmentDetails = EquipmentDetails::create(path, name, equipment->getEquipmentDesc(), std::to_string(equipment->getLevel()), equipmentStats, equipment->getTypeName(), equipment->getLevel(), false, isInUpgrade, equipment->getEquipmentType(), equipment->getElement() == BaseEquipment::Element::FIRE ? "Fire" : equipment->getElement() == BaseEquipment::Element::THUNDER ? "Thunder" : "None");
+        inventoryBorder->addChild(equipment->equipmentDetails, 20000);
+        equipment->equipmentDetails->setScale(0.5 * Director::getInstance()->getContentScaleFactor());
+    }
+    auto ePos = Vec2(currentNode->getBoundingNode().getMidX(), currentNode->getBoundingNode().getMidY());
+    auto eSize = currentNode->getBoundingNode().size / 2;
+    Vec2 equipmentPos = ePos + Vec2(equipment->equipmentDetails->background->getContentSize().width / 2 - eSize.width, -equipment->equipmentDetails->background->getContentSize().height / 2 + eSize.height);
+    if (equipmentPos.x + equipment->equipmentDetails->background->getContentSize().width / 2 > buttonClose->getPosition().x) {
+        equipmentPos.x = ePos.x - Vec2(equipment->equipmentDetails->background->getContentSize().width / 2 + eSize.width, -equipment->equipmentDetails->background->getContentSize().height / 2).x;
+    }
+    if (equipmentPos.y - equipment->equipmentDetails->background->getContentSize().height / 2 > buttonClose->getPosition().y) {
+        equipmentPos.y = ePos.y - Vec2(equipment->equipmentDetails->background->getContentSize().width / 2, -equipment->equipmentDetails->background->getContentSize().height / 2).y;
+    }
+    if (equipmentPos.y + equipment->equipmentDetails->background->getContentSize().height / 2 < buttonClose->getPosition().y - equipment->equipmentDetails->background->getContentSize().height / 2) {
+        equipmentPos.y = ePos.y + Vec2(-equipment->equipmentDetails->background->getContentSize().width / 2, equipment->equipmentDetails->background->getContentSize().height * 0.6 / 2).y;
+    }
+    equipment->equipmentDetails->setUpgradeInventory(this);
+    equipment->equipmentDetails->setPosition(equipmentPos);
+    equipment->equipmentDetails->show();
+}
+
+void UpgradeInventory::showItemDetails(BaseItem* item, bool isInMaterialsNode) {
+    std::string path = item->getItemSprite()->getTexture()->getPath();
+    std::string name = item->getItemName();
+    if (item->itemDetails == nullptr) {
+        item->itemDetails = ItemDetails::create(path, name, item->getItemDesc(), item->getItemType(), "", true, movingItemQuantity, isInMaterialsNode, item->getItemLevel());
+        item->itemDetails->setScale(0.5 * Director::getInstance()->getContentScaleFactor());
+        inventoryBorder->addChild(item->itemDetails, 2000);
+    }
+    auto iPos = Vec2(currentNode->getBoundingNode().getMidX(), currentNode->getBoundingNode().getMidY());
+    auto iSize = currentNode->getBoundingNode().size / 2;
+    Vec2 itemPos = iPos + Vec2(item->itemDetails->background->getContentSize().width / 2 - iSize.width, -item->itemDetails->background->getContentSize().height / 2 + iSize.height);
+    if (itemPos.x + item->itemDetails->background->getContentSize().width / 2 > buttonClose->getPosition().x) {
+        itemPos.x = iPos.x - Vec2(item->itemDetails->background->getContentSize().width / 2 + iSize.width, -item->itemDetails->background->getContentSize().height / 2).x;
+    }
+    if (itemPos.y - item->itemDetails->background->getContentSize().height / 2 > buttonClose->getPosition().y) {
+        itemPos.y = iPos.y - Vec2(item->itemDetails->background->getContentSize().width / 2, -item->itemDetails->background->getContentSize().height / 2).y;
+    }
+    if (itemPos.y + item->itemDetails->background->getContentSize().height / 2 < buttonClose->getPosition().y - item->itemDetails->background->getContentSize().height / 2) {
+        itemPos.y = iPos.y + Vec2(-item->itemDetails->background->getContentSize().width / 2, item->itemDetails->background->getContentSize().height * 0.6 / 2).y;
+    }
+    item->itemDetails->setUpgradeInventory(this);
+    item->itemDetails->setPosition(itemPos);
+    item->itemDetails->show();
+}
+void UpgradeInventory::addEquipment(std::string equipmentName, int equipmentLv, int quantity) {
+    if (equipmentName == "") return;
+    for (auto node : inventoryNodes) {
+        if (node->getStatus() == "busy" && node->getBaseEquipment()) {
+            if (node->getBaseEquipment()->getEquipmentName() == equipmentName) {
+                node->setQuantity(node->getQuantity() + quantity);
+                return;
+            }
+        }
+    }
+    for (auto node : inventoryNodes) {
+        if (node->getStatus() == "free") {
+            node->setBaseEquipment(equipmentName, equipmentLv);
+            node->setQuantity(quantity);
+            return;
+        }
+    }
+}
+
+void UpgradeInventory::addItem(std::string itemName, int quantity) {
+    for (auto node : inventoryNodes) {
+        if (node->getStatus() == "busy" && node->getBaseItem()) {
+            if (node->getBaseItem()->getItemName() == itemName) {
+                node->setQuantity(node->getQuantity() + quantity);
+                return;
+            }
+        }
+    }
+    for (auto node : inventoryNodes) {
+        if (node->getStatus() == "free") {
+            node->setBaseItem(itemName);
+            node->setQuantity(quantity);
+            return;
+        }
+    }
+}
+
+void UpgradeInventory::dropItem(std::string itemName) {
+    for (auto node : inventoryNodes) {
+        if (node->getStatus() == "busy" && node->getBaseItem()) {
+            if (node->getBaseItem()->getItemName() == itemName) {
+                node->removeBaseItem();
+                return;
+            }
+        }
+    }
+}
+
+void UpgradeInventory::dropEquipment(std::string itemName) {
+    for (auto node : inventoryNodes) {
+        if (node->getStatus() == "busy" && node->getBaseEquipment()) {
+            if (node->getBaseEquipment()->getEquipmentName() == itemName) {
+                node->removeBaseEquipment();
+                return;
+            }
+        }
+    }
+}
+
+void UpgradeInventory::removeEquipment(std::string equipmentName) {
+    for (auto node : inventoryNodes) {
+        if (node->getStatus() == "busy") {
+            if (node->getBaseEquipment()->getEquipmentName() == equipmentName) {
+                node->removeBaseEquipment();
+                return;
+            }
+        }
+    }
+}
+
+void UpgradeInventory::removeItem(std::string itemName) {
+    for (auto node : inventoryNodes) {
+        if (node->getStatus() == "busy") {
+            if (node->getBaseItem()->getItemName() == itemName) {
+                node->removeBaseItem();
+                return;
+            }
+        }
+    }
+}
+
+void UpgradeInventory::showUpgradeInventory() {
+    inventoryBorder->setVisible(true);
+    isSo = true;
+}
+
+void UpgradeInventory::hideUpgradeInventory() {
+    inventoryBorder->setVisible(false);
+    isSo = false;
+}

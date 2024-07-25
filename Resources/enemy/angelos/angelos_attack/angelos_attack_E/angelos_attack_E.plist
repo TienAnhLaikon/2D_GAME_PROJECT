@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>frames</key>
+        <dict>
+            <key>angelos_attack_E (1).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{200,200}</string>
+                <key>spriteSourceSize</key>
+                <string>{200,200}</string>
+                <key>textureRect</key>
+                <string>{{0,0},{200,200}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>angelos_attack_E (2).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{200,200}</string>
+                <key>spriteSourceSize</key>
+                <string>{200,200}</string>
+                <key>textureRect</key>
+                <string>{{200,0},{200,200}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>angelos_attack_E (3).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{200,200}</string>
+                <key>spriteSourceSize</key>
+                <string>{200,200}</string>
+                <key>textureRect</key>
+                <string>{{400,0},{200,200}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+        </dict>
+        <key>metadata</key>
+        <dict>
+            <key>format</key>
+            <integer>3</integer>
+            <key>pixelFormat</key>
+            <string>RGBA8888</string>
+            <key>premultiplyAlpha</key>
+            <false/>
+            <key>realTextureFileName</key>
+            <string>angelos_attack_E.png</string>
+            <key>size</key>
+            <string>{600,200}</string>
+            <key>smartupdate</key>
+            <string>$TexturePacker:SmartUpdate:4e988bfa56856e16d71bfb276406ab29:d49e62dfb542a519be3dea1eb2bf34ed:3389c1817b33bd89b9ea0dbf85d50a62$</string>
+            <key>textureFileName</key>
+            <string>angelos_attack_E.png</string>
+        </dict>
+    </dict>
+</plist>

@@ -1,0 +1,29 @@
+{
+    "BasePlayer": 
+    {
+        "Max_level": 30,
+        "HP": 120.0,
+        "MP": 100.0,
+        "HP_regen": 5.6,
+        "MP_regen": 7.9,
+        "Armor": 35.0,
+        "AD": 68.0,
+        "AP": 45.0,
+        "MS": 80.0,
+        "Attack_range": 50.0,
+        "Attack_speed": 5.0,
+        "Exp_gain": 0.0,
+        "CDR": 1.0,
+        "HP_bonus": 1.2,
+        "MP_bonus": 1.1,
+        "HP_regen_bonus": 1.1,
+        "MP_regen_bonus": 1.1,
+        "Armor_bonus": 1.1,
+        "AD_bonus": 1.05,
+        "AP_bonus": 1.2,
+        "MS_bonus": 1.0,
+        "AR_bonus": 1.0,
+        "AS_bonus": 1.0,
+        "Exp_gain_bonus": 0.0
+    }
+}

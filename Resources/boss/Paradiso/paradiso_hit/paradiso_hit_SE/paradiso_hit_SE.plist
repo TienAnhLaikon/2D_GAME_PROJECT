@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>frames</key>
+        <dict>
+            <key>paradiso_hit_SE (1).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{300,300}</string>
+                <key>spriteSourceSize</key>
+                <string>{300,300}</string>
+                <key>textureRect</key>
+                <string>{{0,0},{300,300}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>paradiso_hit_SE (2).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{300,300}</string>
+                <key>spriteSourceSize</key>
+                <string>{300,300}</string>
+                <key>textureRect</key>
+                <string>{{300,0},{300,300}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>paradiso_hit_SE (3).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{300,300}</string>
+                <key>spriteSourceSize</key>
+                <string>{300,300}</string>
+                <key>textureRect</key>
+                <string>{{600,0},{300,300}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+        </dict>
+        <key>metadata</key>
+        <dict>
+            <key>format</key>
+            <integer>3</integer>
+            <key>pixelFormat</key>
+            <string>RGBA8888</string>
+            <key>premultiplyAlpha</key>
+            <false/>
+            <key>realTextureFileName</key>
+            <string>paradiso_hit_SE.png</string>
+            <key>size</key>
+            <string>{900,300}</string>
+            <key>smartupdate</key>
+            <string>$TexturePacker:SmartUpdate:feea1018917a16c016b5960654c41037:98818d8fa3836ab8712be5c8b02d78c8:f2855a4db995cd733cc380ff365cafab$</string>
+            <key>textureFileName</key>
+            <string>paradiso_hit_SE.png</string>
+        </dict>
+    </dict>
+</plist>

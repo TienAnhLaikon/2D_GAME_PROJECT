@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>frames</key>
+        <dict>
+            <key>angelos_idle_NW (1).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{200,200}</string>
+                <key>spriteSourceSize</key>
+                <string>{200,200}</string>
+                <key>textureRect</key>
+                <string>{{0,0},{200,200}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>angelos_idle_NW (2).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{200,200}</string>
+                <key>spriteSourceSize</key>
+                <string>{200,200}</string>
+                <key>textureRect</key>
+                <string>{{200,0},{200,200}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>angelos_idle_NW (3).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{200,200}</string>
+                <key>spriteSourceSize</key>
+                <string>{200,200}</string>
+                <key>textureRect</key>
+                <string>{{400,0},{200,200}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+        </dict>
+        <key>metadata</key>
+        <dict>
+            <key>format</key>
+            <integer>3</integer>
+            <key>pixelFormat</key>
+            <string>RGBA8888</string>
+            <key>premultiplyAlpha</key>
+            <false/>
+            <key>realTextureFileName</key>
+            <string>angelos_idle_NW.png</string>
+            <key>size</key>
+            <string>{600,200}</string>
+            <key>smartupdate</key>
+            <string>$TexturePacker:SmartUpdate:0ec45231b99a03f5e28ff014a82255c5:3464e02664b56ae6b023ce8d1165f095:0af4abd785cfc734a0807ebb22eb44cb$</string>
+            <key>textureFileName</key>
+            <string>angelos_idle_NW.png</string>
+        </dict>
+    </dict>
+</plist>

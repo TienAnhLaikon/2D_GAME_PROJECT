@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>frames</key>
+        <dict>
+            <key>angelos_death_NE.png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{200,200}</string>
+                <key>spriteSourceSize</key>
+                <string>{200,200}</string>
+                <key>textureRect</key>
+                <string>{{0,0},{200,200}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+        </dict>
+        <key>metadata</key>
+        <dict>
+            <key>format</key>
+            <integer>3</integer>
+            <key>pixelFormat</key>
+            <string>RGBA8888</string>
+            <key>premultiplyAlpha</key>
+            <false/>
+            <key>realTextureFileName</key>
+            <string>angelos_death_NE.png</string>
+            <key>size</key>
+            <string>{200,200}</string>
+            <key>smartupdate</key>
+            <string>$TexturePacker:SmartUpdate:d60ba995102204974cbafe30296bd9cd:33f98136c8f1e67cc6986a2f1f1611a6:edbf7715994da3551d76f6e7f4b6292d$</string>
+            <key>textureFileName</key>
+            <string>angelos_death_NE.png</string>
+        </dict>
+    </dict>
+</plist>

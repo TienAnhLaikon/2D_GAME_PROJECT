@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>frames</key>
+        <dict>
+            <key>paradiso_idle_SW (1).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{300,300}</string>
+                <key>spriteSourceSize</key>
+                <string>{300,300}</string>
+                <key>textureRect</key>
+                <string>{{0,0},{300,300}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>paradiso_idle_SW (2).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{300,300}</string>
+                <key>spriteSourceSize</key>
+                <string>{300,300}</string>
+                <key>textureRect</key>
+                <string>{{300,0},{300,300}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+            <key>paradiso_idle_SW (3).png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{0,0}</string>
+                <key>spriteSize</key>
+                <string>{300,300}</string>
+                <key>spriteSourceSize</key>
+                <string>{300,300}</string>
+                <key>textureRect</key>
+                <string>{{600,0},{300,300}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
+        </dict>
+        <key>metadata</key>
+        <dict>
+            <key>format</key>
+            <integer>3</integer>
+            <key>pixelFormat</key>
+            <string>RGBA8888</string>
+            <key>premultiplyAlpha</key>
+            <false/>
+            <key>realTextureFileName</key>
+            <string>paradiso_idle_SW.png</string>
+            <key>size</key>
+            <string>{900,300}</string>
+            <key>smartupdate</key>
+            <string>$TexturePacker:SmartUpdate:cfd15b9242d1480c6606659992776d31:58dd58b67251960de61540d29640a2c1:fcddaa29749b2a7bba67191d4b7d505d$</string>
+            <key>textureFileName</key>
+            <string>paradiso_idle_SW.png</string>
+        </dict>
+    </dict>
+</plist>
